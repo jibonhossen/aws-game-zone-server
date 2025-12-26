@@ -232,7 +232,7 @@ app.post('/api/withdrawals/new', async (req, res) => {
                         sound: 'hello_tune.wav',
                         channelId: 'withdrawal_alerts',
                         title: 'New Withdrawal Request! 💰',
-                        body: `${withdrawal.username} requested ৳${withdrawal.amount} via ${paymentMethod}`,
+                        body: `${withdrawal.username} (UID: ${withdrawal.uid}) requested ৳${withdrawal.amount} via ${paymentMethod}`,
                         data: { type: 'withdrawal', id: withdrawal.id },
                     });
                 }
@@ -294,7 +294,7 @@ app.post('/api/withdrawals/verify', async (req, res) => {
             stats.pendingWithdrawals = Math.max(0, stats.pendingWithdrawals - 1);
         }
 
-        const log = saveActivityLog(`Withdrawal ${status}`, `ID: ${id}`, status === 'completed' ? 'success' : 'error');
+        const log = saveActivityLog(`Withdrawal ${status}`, `ID: ${id}`, `UID: ${id}`, status === 'completed' ? 'success' : 'error');
         io.emit('status_updated', { id, status, log });
 
         // 2. Callback to Worker to update D1
