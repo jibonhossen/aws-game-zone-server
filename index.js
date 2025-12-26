@@ -220,7 +220,8 @@ app.post('/api/withdrawals/new', async (req, res) => {
                     }
                     messages.push({
                         to: admin.token,
-                        sound: 'default',
+                        sound: 'hello_tune.wav',
+                        channelId: 'withdrawal_alerts',
                         title: 'New Withdrawal Request! 💰',
                         body: `${withdrawal.username} requested ৳${withdrawal.amount} via ${withdrawal.paymentMethod}`,
                         data: { type: 'withdrawal', id: withdrawal.id },
