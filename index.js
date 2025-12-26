@@ -199,8 +199,8 @@ app.post('/api/withdrawals/new', async (req, res) => {
 
         // Log activity
         const log = saveActivityLog(
-            `New withdrawal: ${withdrawal.username} (${withdrawal.uid})`,
-            `৳${withdrawal.amount} via ${paymentMethod} (${paymentNumber})`,
+            `New withdrawal: ${withdrawal.username} UID: ${withdrawal.uid}`,
+            `৳${withdrawal.amount} via ${paymentMethod} - ${paymentNumber}`,
             'success'
         );
 
