@@ -178,14 +178,14 @@ app.post('/api/withdrawals/new', async (req, res) => {
             .from('withdrawals')
             .insert([{
                 id: withdrawal.id, // Use the D1 transaction UUID
-                txn_id: withdrawal.transactionId,
+                txn_id: withdrawal.txn_id || withdrawal.transactionId,
                 uid: withdrawal.uid,
                 amount: withdrawal.amount,
-                payment_method: withdrawal.paymentMethod,
-                payment_number: withdrawal.paymentNumber,
+                payment_method: withdrawal.payment_method || withdrawal.paymentMethod,
+                payment_number: withdrawal.payment_number || withdrawal.paymentNumber,
                 username: withdrawal.username,
                 status: 'pending',
-                created_at: withdrawal.createdAt || new Date().toISOString()
+                created_at: withdrawal.created_at || withdrawal.createdAt || new Date().toISOString()
             }]);
 
         if (error) throw error;
@@ -194,10 +194,13 @@ app.post('/api/withdrawals/new', async (req, res) => {
         stats.totalWithdrawals++;
         stats.pendingWithdrawals++;
 
+        const paymentMethod = withdrawal.payment_method || withdrawal.paymentMethod;
+        const paymentNumber = withdrawal.payment_number || withdrawal.paymentNumber;
+
         // Log activity
         const log = saveActivityLog(
             `New withdrawal: ${withdrawal.username} (${withdrawal.uid})`,
-            `৳${withdrawal.amount} via ${withdrawal.paymentMethod} (${withdrawal.paymentNumber})`,
+            `৳${withdrawal.amount} via ${paymentMethod} (${paymentNumber})`,
             'success'
         );
 
@@ -206,8 +209,8 @@ app.post('/api/withdrawals/new', async (req, res) => {
             username: withdrawal.username,
             uid: withdrawal.uid,
             amount: withdrawal.amount,
-            method: withdrawal.paymentMethod,
-            number: withdrawal.paymentNumber,
+            method: paymentMethod,
+            number: paymentNumber,
             log // Send full log object specifically
         });
 
@@ -229,7 +232,7 @@ app.post('/api/withdrawals/new', async (req, res) => {
                         sound: 'hello_tune.wav',
                         channelId: 'withdrawal_alerts',
                         title: 'New Withdrawal Request! 💰',
-                        body: `${withdrawal.username} requested ৳${withdrawal.amount} via ${withdrawal.paymentMethod}`,
+                        body: `${withdrawal.username} requested ৳${withdrawal.amount} via ${paymentMethod}`,
                         data: { type: 'withdrawal', id: withdrawal.id },
                     });
                 }
