@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -56,12 +57,26 @@
             animation: move 20s infinite alternate;
         }
 
-        .blob-1 { top: -10%; left: -10%; background: rgba(99, 102, 241, 0.2); }
-        .blob-2 { bottom: -10%; right: -10%; background: rgba(16, 185, 129, 0.1); }
+        .blob-1 {
+            top: -10%;
+            left: -10%;
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        .blob-2 {
+            bottom: -10%;
+            right: -10%;
+            background: rgba(16, 185, 129, 0.1);
+        }
 
         @keyframes move {
-            from { transform: translate(0, 0); }
-            to { transform: translate(10%, 10%); }
+            from {
+                transform: translate(0, 0);
+            }
+
+            to {
+                transform: translate(10%, 10%);
+            }
         }
 
         header {
@@ -148,7 +163,9 @@
         }
 
         @media (max-width: 1024px) {
-            .main-content { grid-template-columns: 1fr; }
+            .main-content {
+                grid-template-columns: 1fr;
+            }
         }
 
         .activity-card {
@@ -174,16 +191,39 @@
         }
 
         @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
-        .activity-item:last-child { border-bottom: none; }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
 
-        .item-info { display: flex; flex-direction: column; }
-        .item-user { font-weight: 600; }
-        .item-details { font-size: 0.75rem; color: var(--text-dim); }
-        .item-amount { font-weight: 700; color: var(--success); }
+        .item-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .item-user {
+            font-weight: 600;
+        }
+
+        .item-details {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .item-amount {
+            font-weight: 700;
+            color: var(--success);
+        }
 
         .system-stats {
             display: flex;
@@ -199,7 +239,9 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .sys-stat:last-child { border-bottom: none; }
+        .sys-stat:last-child {
+            border-bottom: none;
+        }
 
         .progress-bar {
             width: 100px;
@@ -216,6 +258,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="background-blobs">
         <div class="blob blob-1"></div>
@@ -263,29 +306,50 @@
             </ul>
         </div>
 
-        <div class="card system-stats">
-            <h2 style="font-size: 1.125rem; margin-bottom: 1rem;">System Health</h2>
-            <div class="sys-stat">
-                <span>CPU Usage</span>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span id="sys-cpu">0%</span>
-                    <div class="progress-bar"><div class="progress-fill" id="cpu-fill" style="width: 0%"></div></div>
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Connected Devices Card -->
+            <div class="card">
+                <h2
+                    style="font-size: 1.125rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    Connected Devices
+                    <span id="mobile-count"
+                        style="font-size: 0.875rem; background: var(--primary); padding: 2px 8px; border-radius: 12px;">0</span>
+                </h2>
+                <ul id="mobile-list"
+                    style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem; max-height: 200px; overflow-y: auto;">
+                    <li style="color: var(--text-dim); font-size: 0.875rem; text-align: center; padding: 1rem;">No
+                        devices connected</li>
+                </ul>
+            </div>
+
+            <div class="card system-stats">
+                <h2 style="font-size: 1.125rem; margin-bottom: 1rem;">System Health</h2>
+                <div class="sys-stat">
+                    <span>CPU Usage</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="sys-cpu">0%</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="cpu-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="sys-stat">
-                <span>Memory Usage</span>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span id="sys-mem">0%</span>
-                    <div class="progress-bar"><div class="progress-fill" id="mem-fill" style="width: 0%"></div></div>
+                <div class="sys-stat">
+                    <span>Memory Usage</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="sys-mem">0%</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="mem-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="sys-stat">
-                <span>Network</span>
-                <span style="color: var(--success)">Stable</span>
-            </div>
-            <div class="sys-stat">
-                <span>Supabase</span>
-                <span style="color: var(--success)">Connected</span>
+                <div class="sys-stat">
+                    <span>Network</span>
+                    <span style="color: var(--success)">Stable</span>
+                </div>
+                <div class="sys-stat">
+                    <span>Supabase</span>
+                    <span style="color: var(--success)">Connected</span>
+                </div>
             </div>
         </div>
     </div>
@@ -308,6 +372,35 @@
             statusText.innerText = 'Server Offline';
         });
 
+        socket.on('mobile_list_update', (mobiles) => {
+            const list = document.getElementById('mobile-list');
+            const count = document.getElementById('mobile-count');
+
+            count.innerText = mobiles.length;
+
+            if (mobiles.length === 0) {
+                list.innerHTML = '<li style="color: var(--text-dim); font-size: 0.875rem; text-align: center; padding: 1rem;">No devices connected</li>';
+                return;
+            }
+
+            list.innerHTML = mobiles.map(m => `
+                <li style="display: flex; align-items: center; gap: 10px; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div class="dot online" style="width: 6px; height: 6px;"></div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.875rem; font-weight: 600;">${m.deviceName}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">${m.deviceId}</div>
+                    </div>
+                </li>
+            `).join('');
+        });
+
+        socket.on('activity_history', (logs) => {
+            activityList.innerHTML = '';
+            logs.forEach(log => {
+                addActivity(log.title, log.subtitle, log.type, log.created_at);
+            });
+        });
+
         socket.on('new_withdrawal', (data) => {
             addActivity(`New withdrawal: ${data.username}`, `৳${data.amount} via ${data.method}`, 'success');
             fetchStats();
@@ -318,7 +411,7 @@
             fetchStats();
         });
 
-        function addActivity(title, subtitle, type) {
+        function addActivity(title, subtitle, type, timestamp = new Date()) {
             const li = document.createElement('li');
             li.className = 'activity-item';
             li.innerHTML = `
@@ -327,7 +420,7 @@
                     <span class="item-details">${subtitle}</span>
                 </div>
                 <span class="item-amount" style="color: var(--${type === 'success' ? 'success' : (type === 'error' ? 'error' : 'warning')})">
-                    ${new Date().toLocaleTimeString()}
+                    ${new Date(timestamp).toLocaleTimeString()}
                 </span>
             `;
             activityList.prepend(li);
@@ -338,13 +431,13 @@
             try {
                 const res = await fetch('/api/dashboard/stats');
                 const data = await res.json();
-                
+
                 // Update UI
                 document.getElementById('stat-total').innerText = data.app.totalWithdrawals;
                 document.getElementById('stat-pending').innerText = data.app.pendingWithdrawals;
-                
-                const rate = data.app.totalWithdrawals > 0 
-                    ? ((data.app.successfulWithdrawals / data.app.totalWithdrawals) * 100).toFixed(1) 
+
+                const rate = data.app.totalWithdrawals > 0
+                    ? ((data.app.successfulWithdrawals / data.app.totalWithdrawals) * 100).toFixed(1)
                     : 0;
                 document.getElementById('stat-rate').innerText = `${rate}%`;
 
@@ -357,7 +450,7 @@
                 // System Health
                 document.getElementById('sys-cpu').innerText = `${data.system.cpu}%`;
                 document.getElementById('cpu-fill').style.width = `${data.system.cpu}%`;
-                
+
                 document.getElementById('sys-mem').innerText = `${data.system.memory}%`;
                 document.getElementById('mem-fill').style.width = `${data.system.memory}%`;
 
@@ -370,4 +463,5 @@
         setInterval(fetchStats, 5000);
     </script>
 </body>
+
 </html>

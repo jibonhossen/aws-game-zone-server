@@ -28,17 +28,84 @@ let stats = {
     startTime: Date.now()
 };
 
+// State
+let connectedMobiles = new Map(); // socketId -> { deviceId, deviceName, connectedAt }
+let activityLog = []; // Cache for new connections
+
+// Persist to Supabase
+const saveActivityLog = async (title, subtitle, type) => {
+    const log = {
+        title,
+        subtitle,
+        type,
+        created_at: new Date().toISOString()
+    };
+
+    // Update local cache
+    activityLog.unshift(log);
+    if (activityLog.length > 50) activityLog = activityLog.slice(0, 50);
+
+    try {
+        const { error } = await supabase
+            .from('activity_logs')
+            .insert([log]);
+
+        if (error) console.error('Error saving activity log to Supabase:', error);
+    } catch (err) {
+        console.error('Error saving activity log:', err);
+    }
+    return log;
+};
+
+const fetchActivityLogs = async () => {
+    try {
+        const { data, error } = await supabase
+            .from('activity_logs')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (!error && data) {
+            activityLog = data;
+        }
+    } catch (err) {
+        console.error('Error fetching activity logs:', err);
+    }
+};
+
 // Socket.io Connection Logic
 io.on('connection', (socket) => {
-    console.log(`[Socket] New client connected: ${socket.id}`);
+    const { type, deviceId, deviceName } = socket.handshake.query;
+    console.log(`[Socket] New client connected: ${socket.id}, Type: ${type}`);
+
+    // Send history to new connections
+    socket.emit('activity_history', activityLog);
+
+    if (type === 'mobile') {
+        connectedMobiles.set(socket.id, {
+            deviceId: deviceId || 'Unknown',
+            deviceName: deviceName || 'Mobile Device',
+            connectedAt: new Date().toISOString()
+        });
+        io.emit('mobile_list_update', Array.from(connectedMobiles.values()));
+        console.log(`[Mobile] Registered: ${deviceName} (${deviceId})`);
+    }
+
+    // Send initial mobile list to dashboard
+    if (type !== 'mobile') {
+        socket.emit('mobile_list_update', Array.from(connectedMobiles.values()));
+    }
 
     socket.on('heartbeat', (data) => {
         // console.log(`[Socket] Heartbeat received from ${socket.id}`);
-        // Optional: Update last_seen in Supabase if needed
     });
 
     socket.on('disconnect', () => {
         console.log(`[Socket] Client disconnected: ${socket.id}`);
+        if (connectedMobiles.has(socket.id)) {
+            connectedMobiles.delete(socket.id);
+            io.emit('mobile_list_update', Array.from(connectedMobiles.values()));
+        }
     });
 });
 
@@ -50,6 +117,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Update initial pending count from Supabase
 const updateInitialStats = async () => {
     try {
+        // Fetch activity logs first
+        await fetchActivityLogs();
+
         const { count, error } = await supabase
             .from('withdrawals')
             .select('*', { count: 'exact', head: true })
@@ -87,7 +157,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
                 uptime: process.uptime(),
                 platform: process.platform
             },
-            app: stats,
+            app: { ...stats, connectedMobiles: connectedMobiles.size },
             timestamp: new Date().toISOString()
         });
     });
@@ -123,11 +193,16 @@ app.post('/api/withdrawals/new', async (req, res) => {
         // Update stats and Notify Dashboard
         stats.totalWithdrawals++;
         stats.pendingWithdrawals++;
+
+        // Log activity
+        const log = saveActivityLog(`New withdrawal: ${withdrawal.username}`, `৳${withdrawal.amount} via ${withdrawal.paymentMethod}`, 'success');
+
         io.emit('new_withdrawal', {
             id: withdrawal.id,
             username: withdrawal.username,
             amount: withdrawal.amount,
-            method: withdrawal.paymentMethod
+            method: withdrawal.paymentMethod,
+            log // Send full log object specifically
         });
 
         // Notify Admins via Push Notification
@@ -209,7 +284,8 @@ app.post('/api/withdrawals/verify', async (req, res) => {
             stats.pendingWithdrawals = Math.max(0, stats.pendingWithdrawals - 1);
         }
 
-        io.emit('status_updated', { id, status });
+        const log = saveActivityLog(`Withdrawal ${status}`, `ID: ${id}`, status === 'completed' ? 'success' : 'error');
+        io.emit('status_updated', { id, status, log });
 
         // 2. Callback to Worker to update D1
         try {
