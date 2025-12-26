@@ -195,13 +195,19 @@ app.post('/api/withdrawals/new', async (req, res) => {
         stats.pendingWithdrawals++;
 
         // Log activity
-        const log = saveActivityLog(`New withdrawal: ${withdrawal.username}`, `৳${withdrawal.amount} via ${withdrawal.paymentMethod}`, 'success');
+        const log = saveActivityLog(
+            `New withdrawal: ${withdrawal.username} (${withdrawal.uid})`,
+            `৳${withdrawal.amount} via ${withdrawal.paymentMethod} (${withdrawal.paymentNumber})`,
+            'success'
+        );
 
         io.emit('new_withdrawal', {
             id: withdrawal.id,
             username: withdrawal.username,
+            uid: withdrawal.uid,
             amount: withdrawal.amount,
             method: withdrawal.paymentMethod,
+            number: withdrawal.paymentNumber,
             log // Send full log object specifically
         });
 

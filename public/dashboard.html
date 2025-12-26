@@ -402,7 +402,7 @@
         });
 
         socket.on('new_withdrawal', (data) => {
-            addActivity(`New withdrawal: ${data.username}`, `৳${data.amount} via ${data.method}`, 'success');
+            addActivity(`New withdrawal: ${data.username} (${data.uid})`, `৳${data.amount} via ${data.method} (${data.number})`, 'success');
             fetchStats();
         });
 
