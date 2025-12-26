@@ -65,8 +65,18 @@ const requireAuth = (req, res, next) => {
 };
 
 // Middleware for API - returns 401 instead of redirect
+// Middleware for API - returns 401 instead of redirect
 const requireApiAuth = (req, res, next) => {
-    const token = req.cookies.token;
+    let token = req.cookies.token;
+
+    // Check Authorization header (Bearer token)
+    if (!token && req.headers.authorization) {
+        const authHeader = req.headers.authorization;
+        if (authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        }
+    }
+
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
     jwt.verify(token, JWT_SECRET, (err, user) => {
@@ -104,7 +114,7 @@ app.post('/auth/login', async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000
         });
 
-        res.json({ message: 'Login successful' });
+        res.json({ message: 'Login successful', token, user: { id: data.id, username: data.username } });
     } catch (e) {
         console.error('Login error:', e);
         res.status(500).json({ error: 'Server error' });
