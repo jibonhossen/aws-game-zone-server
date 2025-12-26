@@ -19,6 +19,7 @@
     "dotenv": "^17.2.3",
     "expo-server-sdk": "^4.0.0",
     "express": "^5.2.1",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "socket.io": "^4.8.3"
   }
 }

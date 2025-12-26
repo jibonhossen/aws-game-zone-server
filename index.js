@@ -7,8 +7,30 @@ const axios = require('axios');
 const { Expo } = require('expo-server-sdk');
 
 const app = express();
+const server = require('http').createServer(app);
+const io = require('socket.io')(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
 const port = process.env.PORT || 3000;
 const expo = new Expo();
+
+// Socket.io Connection Logic
+io.on('connection', (socket) => {
+    console.log(`[Socket] New client connected: ${socket.id}`);
+
+    socket.on('heartbeat', (data) => {
+        // console.log(`[Socket] Heartbeat received from ${socket.id}`);
+        // Optional: Update last_seen in Supabase if needed
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`[Socket] Client disconnected: ${socket.id}`);
+    });
+});
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -151,6 +173,6 @@ app.post('/api/admin/register-token', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`EC2 Withdrawal Server listening at http://localhost:${port}`);
 });
