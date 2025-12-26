@@ -186,6 +186,12 @@ io.on('connection', (socket) => {
         });
         io.emit('mobile_list_update', Array.from(connectedMobiles.values()));
         console.log(`[Mobile] Registered: ${deviceName} (${deviceId})`);
+
+        // Send summary of pending requests immediately
+        socket.emit('admin_summary', {
+            pendingCount: stats.pendingWithdrawals,
+            message: `You have ${stats.pendingWithdrawals} pending request${stats.pendingWithdrawals !== 1 ? 's' : ''}`
+        });
     }
 
     // Send initial mobile list to dashboard
