@@ -5,6 +5,9 @@ const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
 const os = require('os-utils');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const { Expo } = require('expo-server-sdk');
 
@@ -20,6 +23,15 @@ const io = require('socket.io')(server, {
 const port = process.env.PORT || 3000;
 const expo = new Expo();
 
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+
+
+// Auth Config
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-this';
+
 // Global Stats
 let stats = {
     totalWithdrawals: 0,
@@ -31,6 +43,81 @@ let stats = {
 // State
 let connectedMobiles = new Map(); // socketId -> { deviceId, deviceName, connectedAt }
 let activityLog = []; // Cache for new connections
+
+// Supabase configuration
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Auth Middleware
+app.use(cookieParser());
+
+// Middleware to redirect unauthenticated users on dashboard
+const requireAuth = (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) return res.redirect('/login.html');
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.redirect('/login.html');
+        req.user = user;
+        next();
+    });
+};
+
+// Middleware for API - returns 401 instead of redirect
+const requireApiAuth = (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Forbidden' });
+        req.user = user;
+        next();
+    });
+};
+
+// Auth Endpoints
+app.post('/auth/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        const { data, error } = await supabase
+            .from('admins')
+            .select('*')
+            .eq('username', username)
+            .single();
+
+        if (error || !data) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const validPassword = await bcrypt.compare(password, data.password_hash);
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const token = jwt.sign({ id: data.id, username: data.username }, JWT_SECRET, { expiresIn: '24h' });
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 24 * 60 * 60 * 1000
+        });
+
+        res.json({ message: 'Login successful' });
+    } catch (e) {
+        console.error('Login error:', e);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.post('/auth/logout', (req, res) => {
+    res.clearCookie('token');
+    res.json({ message: 'Logged out' });
+});
+
+
+
 
 // Persist to Supabase
 const saveActivityLog = async (title, subtitle, type) => {
@@ -109,10 +196,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// Supabase configuration
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+
 
 // Update initial pending count from Supabase
 const updateInitialStats = async () => {
@@ -139,16 +223,14 @@ updateInitialStats();
 // Cloudflare Worker configuration
 const workerUrl = process.env.WORKER_URL;
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/dashboard', (req, res) => {
+
+app.get('/dashboard', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
 // Dashboard Stats Endpoint
-app.get('/api/dashboard/stats', async (req, res) => {
+app.get('/api/dashboard/stats', requireApiAuth, async (req, res) => {
     os.cpuUsage(function (v) {
         res.json({
             system: {
@@ -258,7 +340,7 @@ app.post('/api/withdrawals/new', async (req, res) => {
 });
 
 // 2. Fetch pending withdrawals for Admin app
-app.get('/api/withdrawals', async (req, res) => {
+app.get('/api/withdrawals', requireApiAuth, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('withdrawals')
@@ -274,7 +356,7 @@ app.get('/api/withdrawals', async (req, res) => {
 });
 
 // 3. Verify/Update status from Admin app
-app.post('/api/withdrawals/verify', async (req, res) => {
+app.post('/api/withdrawals/verify', requireApiAuth, async (req, res) => {
     try {
         const { id, status } = req.body; // status: 'completed' or 'rejected'
 
@@ -312,7 +394,7 @@ app.post('/api/withdrawals/verify', async (req, res) => {
 });
 
 // 4. Register Admin Push Token
-app.post('/api/admin/register-token', async (req, res) => {
+app.post('/api/admin/register-token', requireApiAuth, async (req, res) => {
     try {
         const { token } = req.body;
         if (!token) return res.status(400).json({ error: 'Token is required' });

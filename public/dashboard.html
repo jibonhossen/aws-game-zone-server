@@ -269,9 +269,23 @@
         <div class="logo">
             <h1>Server Management</h1>
         </div>
-        <div class="status-badge" id="server-status">
-            <div class="dot" id="status-dot"></div>
-            <span id="status-text">Connecting...</span>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <div class="status-badge" id="server-status">
+                <div class="dot" id="status-dot"></div>
+                <span id="status-text">Connecting...</span>
+            </div>
+            <button id="logoutBtn" style="
+                background: rgba(239, 68, 68, 0.2); 
+                color: #ef4444; 
+                border: 1px solid rgba(239, 68, 68, 0.3); 
+                padding: 0.5rem 1rem; 
+                border-radius: 50px; 
+                cursor: pointer; 
+                font-weight: 600;
+                transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.3)'"
+                onmouseout="this.style.background='rgba(239, 68, 68, 0.2)'">
+                Logout
+            </button>
         </div>
     </header>
 
@@ -360,6 +374,12 @@
         const statusDot = document.getElementById('status-dot');
         const statusText = document.getElementById('status-text');
 
+        // Logout logic
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetch('/auth/logout', { method: 'POST' });
+            window.location.href = '/login.html';
+        });
+
         // Socket Events
         socket.on('connect', () => {
             statusDot.classList.add('online');
@@ -430,6 +450,12 @@
         async function fetchStats() {
             try {
                 const res = await fetch('/api/dashboard/stats');
+
+                if (res.status === 401 || res.status === 403) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+
                 const data = await res.json();
 
                 // Update UI
