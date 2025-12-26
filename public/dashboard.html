@@ -396,7 +396,7 @@
 
         socket.on('activity_history', (logs) => {
             activityList.innerHTML = '';
-            logs.forEach(log => {
+            logs.slice().reverse().forEach(log => {
                 addActivity(log.title, log.subtitle, log.type, log.created_at);
             });
         });
@@ -424,7 +424,7 @@
                 </span>
             `;
             activityList.prepend(li);
-            if (activityList.children.length > 50) activityList.removeChild(activityList.lastChild);
+            if (activityList.children.length > 25) activityList.removeChild(activityList.lastChild);
         }
 
         async function fetchStats() {

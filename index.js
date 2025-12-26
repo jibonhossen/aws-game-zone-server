@@ -43,7 +43,7 @@ const saveActivityLog = async (title, subtitle, type) => {
 
     // Update local cache
     activityLog.unshift(log);
-    if (activityLog.length > 50) activityLog = activityLog.slice(0, 50);
+    if (activityLog.length > 25) activityLog = activityLog.slice(0, 25);
 
     try {
         const { error } = await supabase
@@ -63,7 +63,7 @@ const fetchActivityLogs = async () => {
             .from('activity_logs')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(50);
+            .limit(25);
 
         if (!error && data) {
             activityLog = data;
