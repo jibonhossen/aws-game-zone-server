@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdrawal Server | Dashboard</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        .background-blobs {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .blob {
+            position: absolute;
+            width: 40vw;
+            height: 40vw;
+            background: var(--primary-glow);
+            filter: blur(100px);
+            border-radius: 50%;
+            animation: move 20s infinite alternate;
+        }
+
+        .blob-1 { top: -10%; left: -10%; background: rgba(99, 102, 241, 0.2); }
+        .blob-2 { bottom: -10%; right: -10%; background: rgba(16, 185, 129, 0.1); }
+
+        @keyframes move {
+            from { transform: translate(0, 0); }
+            to { transform: translate(10%, 10%); }
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--card-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            border: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--error);
+            box-shadow: 0 0 10px var(--error);
+        }
+
+        .dot.online {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .card-label {
+            color: var(--text-dim);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .card-sub {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 0.25rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content { grid-template-columns: 1fr; }
+        }
+
+        .activity-card {
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .activity-list {
+            list-style: none;
+            overflow-y: auto;
+            max-height: 500px;
+            margin-top: 1rem;
+        }
+
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .activity-item:last-child { border-bottom: none; }
+
+        .item-info { display: flex; flex-direction: column; }
+        .item-user { font-weight: 600; }
+        .item-details { font-size: 0.75rem; color: var(--text-dim); }
+        .item-amount { font-weight: 700; color: var(--success); }
+
+        .system-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .sys-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sys-stat:last-child { border-bottom: none; }
+
+        .progress-bar {
+            width: 100px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <header>
+        <div class="logo">
+            <h1>Server Management</h1>
+        </div>
+        <div class="status-badge" id="server-status">
+            <div class="dot" id="status-dot"></div>
+            <span id="status-text">Connecting...</span>
+        </div>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <div class="card-label">Total Withdrawals</div>
+            <div class="card-value" id="stat-total">0</div>
+            <div class="card-sub">All-time processed</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Pending Requests</div>
+            <div class="card-value" id="stat-pending" style="color: var(--warning)">0</div>
+            <div class="card-sub">Awaiting approval</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Success Rate</div>
+            <div class="card-value" id="stat-rate" style="color: var(--success)">0%</div>
+            <div class="card-sub">Successful vs Total</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Server Uptime</div>
+            <div class="card-value" id="stat-uptime">0h 0m</div>
+            <div class="card-sub" id="stat-platform">...</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="card activity-card">
+            <h2 style="font-size: 1.125rem; margin-bottom: 1rem;">Live Activity Feed</h2>
+            <ul class="activity-list" id="activity-list">
+                <!-- Live activities will appear here -->
+            </ul>
+        </div>
+
+        <div class="card system-stats">
+            <h2 style="font-size: 1.125rem; margin-bottom: 1rem;">System Health</h2>
+            <div class="sys-stat">
+                <span>CPU Usage</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span id="sys-cpu">0%</span>
+                    <div class="progress-bar"><div class="progress-fill" id="cpu-fill" style="width: 0%"></div></div>
+                </div>
+            </div>
+            <div class="sys-stat">
+                <span>Memory Usage</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span id="sys-mem">0%</span>
+                    <div class="progress-bar"><div class="progress-fill" id="mem-fill" style="width: 0%"></div></div>
+                </div>
+            </div>
+            <div class="sys-stat">
+                <span>Network</span>
+                <span style="color: var(--success)">Stable</span>
+            </div>
+            <div class="sys-stat">
+                <span>Supabase</span>
+                <span style="color: var(--success)">Connected</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const activityList = document.getElementById('activity-list');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        // Socket Events
+        socket.on('connect', () => {
+            statusDot.classList.add('online');
+            statusText.innerText = 'Server Online';
+            fetchStats();
+        });
+
+        socket.on('disconnect', () => {
+            statusDot.classList.remove('online');
+            statusText.innerText = 'Server Offline';
+        });
+
+        socket.on('new_withdrawal', (data) => {
+            addActivity(`New withdrawal: ${data.username}`, `৳${data.amount} via ${data.method}`, 'success');
+            fetchStats();
+        });
+
+        socket.on('status_updated', (data) => {
+            addActivity(`Withdrawal ${data.status}`, `ID: ${data.id}`, data.status === 'completed' ? 'success' : 'error');
+            fetchStats();
+        });
+
+        function addActivity(title, subtitle, type) {
+            const li = document.createElement('li');
+            li.className = 'activity-item';
+            li.innerHTML = `
+                <div class="item-info">
+                    <span class="item-user">${title}</span>
+                    <span class="item-details">${subtitle}</span>
+                </div>
+                <span class="item-amount" style="color: var(--${type === 'success' ? 'success' : (type === 'error' ? 'error' : 'warning')})">
+                    ${new Date().toLocaleTimeString()}
+                </span>
+            `;
+            activityList.prepend(li);
+            if (activityList.children.length > 50) activityList.removeChild(activityList.lastChild);
+        }
+
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/dashboard/stats');
+                const data = await res.json();
+                
+                // Update UI
+                document.getElementById('stat-total').innerText = data.app.totalWithdrawals;
+                document.getElementById('stat-pending').innerText = data.app.pendingWithdrawals;
+                
+                const rate = data.app.totalWithdrawals > 0 
+                    ? ((data.app.successfulWithdrawals / data.app.totalWithdrawals) * 100).toFixed(1) 
+                    : 0;
+                document.getElementById('stat-rate').innerText = `${rate}%`;
+
+                // Uptime
+                const hours = Math.floor(data.system.uptime / 3600);
+                const mins = Math.floor((data.system.uptime % 3600) / 60);
+                document.getElementById('stat-uptime').innerText = `${hours}h ${mins}m`;
+                document.getElementById('stat-platform').innerText = data.system.platform;
+
+                // System Health
+                document.getElementById('sys-cpu').innerText = `${data.system.cpu}%`;
+                document.getElementById('cpu-fill').style.width = `${data.system.cpu}%`;
+                
+                document.getElementById('sys-mem').innerText = `${data.system.memory}%`;
+                document.getElementById('mem-fill').style.width = `${data.system.memory}%`;
+
+            } catch (err) {
+                console.error('Error fetching stats:', err);
+            }
+        }
+
+        // Auto Refresh Stats every 5 seconds
+        setInterval(fetchStats, 5000);
+    </script>
+</body>
+</html>

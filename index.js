@@ -3,6 +3,8 @@ const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path');
+const os = require('os-utils');
 
 const { Expo } = require('expo-server-sdk');
 
@@ -17,6 +19,14 @@ const io = require('socket.io')(server, {
 
 const port = process.env.PORT || 3000;
 const expo = new Expo();
+
+// Global Stats
+let stats = {
+    totalWithdrawals: 0,
+    pendingWithdrawals: 0,
+    successfulWithdrawals: 0,
+    startTime: Date.now()
+};
 
 // Socket.io Connection Logic
 io.on('connection', (socket) => {
@@ -37,11 +47,51 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Update initial pending count from Supabase
+const updateInitialStats = async () => {
+    try {
+        const { count, error } = await supabase
+            .from('withdrawals')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pending');
+        if (!error) stats.pendingWithdrawals = count || 0;
+
+        const { count: totalCount, error: totalError } = await supabase
+            .from('withdrawals')
+            .select('*', { count: 'exact', head: true });
+        if (!totalError) stats.totalWithdrawals = totalCount || 0;
+    } catch (err) {
+        console.error('Error fetching initial stats:', err);
+    }
+};
+updateInitialStats();
+
 // Cloudflare Worker configuration
 const workerUrl = process.env.WORKER_URL;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+// Dashboard Stats Endpoint
+app.get('/api/dashboard/stats', async (req, res) => {
+    os.cpuUsage(function (v) {
+        res.json({
+            system: {
+                cpu: (v * 100).toFixed(2),
+                memory: (1 - os.freememPercentage()).toFixed(2) * 100,
+                uptime: process.uptime(),
+                platform: process.platform
+            },
+            app: stats,
+            timestamp: new Date().toISOString()
+        });
+    });
+});
 
 app.get('/', (req, res) => {
     console.log("request received")
@@ -69,6 +119,16 @@ app.post('/api/withdrawals/new', async (req, res) => {
             }]);
 
         if (error) throw error;
+
+        // Update stats and Notify Dashboard
+        stats.totalWithdrawals++;
+        stats.pendingWithdrawals++;
+        io.emit('new_withdrawal', {
+            id: withdrawal.id,
+            username: withdrawal.username,
+            amount: withdrawal.amount,
+            method: withdrawal.paymentMethod
+        });
 
         // Notify Admins via Push Notification
         try {
@@ -140,6 +200,16 @@ app.post('/api/withdrawals/verify', async (req, res) => {
             .eq('id', id);
 
         if (error) throw error;
+
+        // Update local stats
+        if (status === 'completed') {
+            stats.pendingWithdrawals = Math.max(0, stats.pendingWithdrawals - 1);
+            stats.successfulWithdrawals++;
+        } else if (status === 'rejected') {
+            stats.pendingWithdrawals = Math.max(0, stats.pendingWithdrawals - 1);
+        }
+
+        io.emit('status_updated', { id, status });
 
         // 2. Callback to Worker to update D1
         try {
