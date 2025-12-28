@@ -1,159 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Withdrawal Server | Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Singularity | Access Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Unbounded:wght@300;400;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --bg: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --text: #f8fafc;
-            --text-dim: #94a3b8;
-            --error: #ef4444;
+            --bg: #020205;
+            --surface: rgba(13, 13, 18, 0.6);
+            --surface-hover: rgba(26, 26, 34, 0.8);
+            --border: rgba(255, 255, 255, 0.08);
+
+            --primary: #7000FF;
+            --primary-glow: rgba(112, 0, 255, 0.5);
+            --secondary: #00F0FF;
+            --secondary-glow: rgba(0, 240, 255, 0.5);
+
+            --success: #00FF94;
+            --error: #FF0055;
+            --text: #ffffff;
+            --text-dim: #8890A0;
+
+            --font-display: 'Unbounded', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Outfit', sans-serif;
         }
 
         body {
             background-color: var(--bg);
             color: var(--text);
+            font-family: var(--font-body);
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
             position: relative;
+            background-image:
+                radial-gradient(circle at 50% 50%, rgba(112, 0, 255, 0.1) 0%, transparent 60%);
         }
 
-        .background-blobs {
-            position: absolute;
+        body::before {
+            content: "";
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
             z-index: -1;
-            overflow: hidden;
-        }
-
-        .blob {
-            position: absolute;
-            width: 50vw;
-            height: 50vw;
-            background: var(--primary-glow);
-            filter: blur(100px);
-            border-radius: 50%;
-            animation: move 20s infinite alternate;
-        }
-
-        .blob-1 { top: -20%; left: -20%; }
-        .blob-2 { bottom: -20%; right: -20%; background: rgba(16, 185, 129, 0.2); }
-
-        @keyframes move {
-            from { transform: translate(0, 0); }
-            to { transform: translate(10%, 10%); }
         }
 
         .login-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            padding: 2.5rem;
+            background: var(--surface);
+            backdrop-filter: blur(24px);
+            padding: 3rem;
             border-radius: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border);
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            max-width: 420px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0.5;
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
         }
 
         h1 {
-            font-size: 1.75rem;
-            margin-bottom: 2rem;
-            text-align: center;
-            background: linear-gradient(to right, #818cf8, #c084fc);
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
         }
 
         .form-group {
             margin-bottom: 1.5rem;
+            position: relative;
         }
 
         label {
             display: block;
-            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
             color: var(--text-dim);
-            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-left: 0.5rem;
         }
 
         input {
             width: 100%;
-            padding: 0.75rem;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem 1.25rem;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
             border-radius: 0.75rem;
             color: var(--text);
             font-size: 1rem;
+            font-family: var(--font-body);
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 0.3s ease;
         }
 
         input:focus {
             border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(112, 0, 255, 0.1);
+            background: rgba(112, 0, 255, 0.05);
         }
 
         button {
             width: 100%;
-            padding: 0.75rem;
+            padding: 1rem;
             background: var(--primary);
             color: white;
             border: none;
             border-radius: 0.75rem;
-            font-size: 1rem;
-            font-weight: 600;
+            font-size: 0.9rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            margin-top: 1rem;
         }
 
         button:hover {
-            opacity: 0.9;
+            background: #8020ff;
+            box-shadow: 0 0 20px var(--primary-glow);
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: var(--surface-hover);
+            color: var(--text-dim);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .error-message {
+            background: rgba(255, 0, 85, 0.1);
+            border: 1px solid rgba(255, 0, 85, 0.2);
             color: var(--error);
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             text-align: center;
-            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
             display: none;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
         }
     </style>
 </head>
-<body>
-    <div class="background-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-    </div>
 
+<body>
     <div class="login-card">
-        <h1>Admin Login</h1>
+        <div class="brand-header">
+            <h1>SINGULARITY GATE</h1>
+            <div class="subtitle">Event Horizon Access</div>
+        </div>
+
         <div id="error" class="error-message"></div>
+
         <form id="loginForm">
             <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
+                <label for="username">Identity</label>
+                <input type="text" id="username" name="username" required autocomplete="off"
+                    placeholder="Enter username">
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password">Access Key</label>
+                <input type="password" id="password" name="password" required placeholder="••••••••">
             </div>
-            <button type="submit" id="submitBtn">Login</button>
+            <button type="submit" id="submitBtn">Authenticate</button>
         </form>
     </div>
 
@@ -166,7 +256,7 @@
             e.preventDefault();
             errorDiv.style.display = 'none';
             submitBtn.disabled = true;
-            submitBtn.innerText = 'Logging in...';
+            submitBtn.innerText = 'Verifying...';
 
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
@@ -181,19 +271,25 @@
                 const data = await res.json();
 
                 if (res.ok) {
-                    window.location.href = '/dashboard';
+                    submitBtn.innerText = 'Access Granted';
+                    submitBtn.style.background = 'var(--success)';
+                    setTimeout(() => window.location.href = '/dashboard', 500);
                 } else {
-                    errorDiv.innerText = data.error || 'Login failed';
-                    errorDiv.style.display = 'block';
+                    throw new Error(data.error || 'Authentication failed');
                 }
             } catch (err) {
-                errorDiv.innerText = 'An error occurred. Please try again.';
+                errorDiv.innerText = err.message;
                 errorDiv.style.display = 'block';
-            } finally {
+                // Trigger reflow to restart animation
+                errorDiv.style.animation = 'none';
+                errorDiv.offsetHeight;
+                errorDiv.style.animation = 'shake 0.4s ease-in-out';
+
                 submitBtn.disabled = false;
-                submitBtn.innerText = 'Login';
+                submitBtn.innerText = 'Authenticate';
             }
         });
     </script>
 </body>
+
 </html>

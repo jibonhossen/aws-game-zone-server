@@ -4,365 +4,553 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Withdrawal Server | Dashboard</title>
+    <title>Singularity | Withdrawal Command</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Unbounded:wght@300;400;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.4);
-            --bg: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --text: #f8fafc;
-            --text-dim: #94a3b8;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
-            --border: rgba(255, 255, 255, 0.1);
+            --bg: #020205;
+            --surface: rgba(13, 13, 18, 0.6);
+            --surface-hover: rgba(26, 26, 34, 0.8);
+            --border: rgba(255, 255, 255, 0.08);
+
+            --primary: #7000FF;
+            --primary-glow: rgba(112, 0, 255, 0.5);
+            --secondary: #00F0FF;
+            --secondary-glow: rgba(0, 240, 255, 0.5);
+
+            --success: #00FF94;
+            --warning: #FFD600;
+            --error: #FF0055;
+
+            --text: #ffffff;
+            --text-dim: #8890A0;
+
+            --font-display: 'Unbounded', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Outfit', sans-serif;
         }
 
         body {
             background-color: var(--bg);
             color: var(--text);
+            font-family: var(--font-body);
             min-height: 100vh;
-            padding: 2rem;
             overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(112, 0, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.1) 0%, transparent 40%);
+            position: relative;
         }
 
-        .background-blobs {
+        /* Ambient Noise Texture */
+        body::before {
+            content: "";
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
             z-index: -1;
-            overflow: hidden;
         }
 
-        .blob {
-            position: absolute;
-            width: 40vw;
-            height: 40vw;
-            background: var(--primary-glow);
-            filter: blur(100px);
-            border-radius: 50%;
-            animation: move 20s infinite alternate;
+        /* Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
         }
 
-        .blob-1 {
-            top: -10%;
-            left: -10%;
-            background: rgba(99, 102, 241, 0.2);
-        }
-
-        .blob-2 {
-            bottom: -10%;
-            right: -10%;
-            background: rgba(16, 185, 129, 0.1);
-        }
-
-        @keyframes move {
-            from {
-                transform: translate(0, 0);
-            }
-
-            to {
-                transform: translate(10%, 10%);
-            }
-        }
-
+        /* Header */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
+            margin-bottom: 3rem;
+            animation: slideDown 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        .logo h1 {
-            font-size: 1.5rem;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        h1 {
+            font-family: var(--font-display);
             font-weight: 700;
-            background: linear-gradient(to right, #818cf8, #c084fc);
+            font-size: 1.5rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
         }
 
-        .status-badge {
+        .status-pill {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            background: var(--card-bg);
             padding: 0.5rem 1rem;
-            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border);
-            font-size: 0.875rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            backdrop-filter: blur(10px);
         }
 
-        .dot {
-            width: 8px;
-            height: 8px;
+        .status-dot {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            background: var(--error);
-            box-shadow: 0 0 10px var(--error);
+            background: var(--text-dim);
+            transition: all 0.3s ease;
         }
 
-        .dot.online {
+        .status-dot.online {
             background: var(--success);
             box-shadow: 0 0 10px var(--success);
         }
 
-        .grid {
+        /* Grid System */
+        .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
 
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            transition: transform 0.3s ease, border-color 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(99, 102, 241, 0.5);
-        }
-
-        .card-label {
-            color: var(--text-dim);
-            font-size: 0.875rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .card-value {
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        .card-sub {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            margin-top: 0.25rem;
-        }
-
-        .main-content {
+        .main-split {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 1.5rem;
         }
 
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
+        /* Cards */
+        .glass-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
 
-        .activity-card {
-            min-height: 400px;
+        .glass-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            background: var(--surface-hover);
+        }
+
+        .glass-card:hover::after {
+            opacity: 1;
+        }
+
+        /* Stats Typography */
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stat-value {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 400;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(180deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-sub {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* Activity Feed */
+        .feed-container {
+            height: 100%;
             display: flex;
             flex-direction: column;
         }
 
-        .activity-list {
-            list-style: none;
-            overflow-y: auto;
-            max-height: 500px;
-            margin-top: 1rem;
-        }
-
-        .activity-item {
+        .feed-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem;
+            margin-bottom: 1.5rem;
             border-bottom: 1px solid var(--border);
-            animation: slideIn 0.3s ease-out;
+            padding-bottom: 1rem;
+        }
+
+        .feed-title {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        .feed-list {
+            list-style: none;
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 0.5rem;
+            max-height: 500px;
+        }
+
+        /* Scrollbar */
+        .feed-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .feed-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .feed-list::-webkit-scrollbar-thumb {
+            background: var(--surface-highlight);
+            border-radius: 4px;
+        }
+
+        .feed-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1rem;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            animation: slideIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+
+        .feed-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--border);
+        }
+
+        .feed-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .feed-content h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .feed-content p {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .feed-time {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            font-family: monospace;
+        }
+
+        /* System Health */
+        .health-row {
+            margin-bottom: 1.25rem;
+        }
+
+        .health-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .bar-bg {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            filter: blur(2px);
+            opacity: 0.5;
+        }
+
+        /* Mobile Devices List */
+        .device-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 0.5rem;
+        }
+
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .device-type {
+            color: var(--text-dim);
+            font-size: 1rem;
+        }
+
+        /* Utility */
+        .logout-btn {
+            background: transparent;
+            color: var(--error);
+            border: 1px solid rgba(255, 0, 85, 0.3);
+            padding: 0.5rem 1.25rem;
+            border-radius: 100px;
+            cursor: pointer;
+            font-family: var(--font-display);
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 0, 85, 0.1);
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.2);
+            border-color: var(--error);
+        }
+
+        /* Animations */
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-
             to {
                 opacity: 1;
                 transform: translateX(0);
             }
         }
 
-        .activity-item:last-child {
-            border-bottom: none;
+        .stagger-1 {
+            animation-delay: 0.1s;
+            animation-fill-mode: backwards;
+            animation-name: slideDown;
+            animation-duration: 0.6s;
         }
 
-        .item-info {
-            display: flex;
-            flex-direction: column;
+        .stagger-2 {
+            animation-delay: 0.2s;
+            animation-fill-mode: backwards;
+            animation-name: slideDown;
+            animation-duration: 0.6s;
         }
 
-        .item-user {
-            font-weight: 600;
+        .stagger-3 {
+            animation-delay: 0.3s;
+            animation-fill-mode: backwards;
+            animation-name: slideDown;
+            animation-duration: 0.6s;
         }
 
-        .item-details {
-            font-size: 0.75rem;
-            color: var(--text-dim);
+        .stagger-4 {
+            animation-delay: 0.4s;
+            animation-fill-mode: backwards;
+            animation-name: slideDown;
+            animation-duration: 0.6s;
         }
 
-        .item-amount {
-            font-weight: 700;
-            color: var(--success);
-        }
+        @media (max-width: 1024px) {
 
-        .system-stats {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .sys-stat {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .sys-stat:last-child {
-            border-bottom: none;
-        }
-
-        .progress-bar {
-            width: 100px;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            transition: width 0.5s ease;
+            .dashboard-grid,
+            .main-split {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="background-blobs">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-    </div>
-
-    <header>
-        <div class="logo">
-            <h1>Server Management</h1>
-        </div>
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <div class="status-badge" id="server-status">
-                <div class="dot" id="status-dot"></div>
-                <span id="status-text">Connecting...</span>
+    <div class="container">
+        <header>
+            <div class="brand">
+                <h1>Singularity Core</h1>
+                <div class="status-pill">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="status-text">INIT_SEQUENCE...</span>
+                </div>
             </div>
-            <button id="logoutBtn" style="
-                background: rgba(239, 68, 68, 0.2); 
-                color: #ef4444; 
-                border: 1px solid rgba(239, 68, 68, 0.3); 
-                padding: 0.5rem 1rem; 
-                border-radius: 50px; 
-                cursor: pointer; 
-                font-weight: 600;
-                transition: all 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.3)'"
-                onmouseout="this.style.background='rgba(239, 68, 68, 0.2)'">
-                Logout
-            </button>
-        </div>
-    </header>
+            <button id="logoutBtn" class="logout-btn">Terminate Session</button>
+        </header>
 
-    <div class="grid">
-        <div class="card">
-            <div class="card-label">Total Withdrawals</div>
-            <div class="card-value" id="stat-total">0</div>
-            <div class="card-sub">All-time processed</div>
-        </div>
-        <div class="card">
-            <div class="card-label">Pending Requests</div>
-            <div class="card-value" id="stat-pending" style="color: var(--warning)">0</div>
-            <div class="card-sub">Awaiting approval</div>
-        </div>
-        <div class="card">
-            <div class="card-label">Success Rate</div>
-            <div class="card-value" id="stat-rate" style="color: var(--success)">0%</div>
-            <div class="card-sub">Successful vs Total</div>
-        </div>
-        <div class="card">
-            <div class="card-label">Server Uptime</div>
-            <div class="card-value" id="stat-uptime">0h 0m</div>
-            <div class="card-sub" id="stat-platform">...</div>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <div class="card activity-card">
-            <h2 style="font-size: 1.125rem; margin-bottom: 1rem;">Live Activity Feed</h2>
-            <ul class="activity-list" id="activity-list">
-                <!-- Live activities will appear here -->
-            </ul>
+        <!-- Stats Grid -->
+        <div class="dashboard-grid">
+            <div class="glass-card stagger-1">
+                <div class="stat-label">
+                    Total Volume
+                    <span style="color: var(--primary)">◎</span>
+                </div>
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-sub">Lifetime Withdrawals</div>
+            </div>
+            <div class="glass-card stagger-2">
+                <div class="stat-label">
+                    Pending Queue
+                    <span style="color: var(--warning)">◉</span>
+                </div>
+                <div class="stat-value" id="stat-pending" style="color: var(--warning)">0</div>
+                <div class="stat-sub">Action Required</div>
+            </div>
+            <div class="glass-card stagger-3">
+                <div class="stat-label">
+                    Success Rate
+                    <span style="color: var(--success)">◈</span>
+                </div>
+                <div class="stat-value" id="stat-rate" style="color: var(--success)">0%</div>
+                <div class="stat-sub">Optimization Level</div>
+            </div>
+            <div class="glass-card stagger-4">
+                <div class="stat-label">
+                    System Uptime
+                    <span style="color: var(--secondary)">▣</span>
+                </div>
+                <div class="stat-value" id="stat-uptime">0h 0m</div>
+                <div class="stat-sub" id="stat-platform">OS: Unknown</div>
+            </div>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <!-- Connected Devices Card -->
-            <div class="card">
-                <h2
-                    style="font-size: 1.125rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                    Connected Devices
-                    <span id="mobile-count"
-                        style="font-size: 0.875rem; background: var(--primary); padding: 2px 8px; border-radius: 12px;">0</span>
-                </h2>
-                <ul id="mobile-list"
-                    style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem; max-height: 200px; overflow-y: auto;">
-                    <li style="color: var(--text-dim); font-size: 0.875rem; text-align: center; padding: 1rem;">No
-                        devices connected</li>
+        <div class="main-split">
+            <!-- Activity Feed -->
+            <div class="glass-card feed-container stagger-1" style="min-height: 500px;">
+                <div class="feed-header">
+                    <div class="feed-title">Live Transaction Stream</div>
+                    <div
+                        style="width: 8px; height: 8px; background: var(--error); border-radius: 50%; box-shadow: 0 0 8px var(--error); animation: blink 2s infinite;">
+                    </div>
+                </div>
+                <ul class="feed-list" id="activity-list">
+                    <!-- Dynamic Content -->
                 </ul>
             </div>
 
-            <div class="card system-stats">
-                <h2 style="font-size: 1.125rem; margin-bottom: 1rem;">System Health</h2>
-                <div class="sys-stat">
-                    <span>CPU Usage</span>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span id="sys-cpu">0%</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="cpu-fill" style="width: 0%"></div>
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <!-- System Health -->
+                <div class="glass-card stagger-2">
+                    <div class="feed-title" style="margin-bottom: 1.5rem;">System Resources</div>
+
+                    <div class="health-row">
+                        <div class="health-label">
+                            <span>CPU Core Load</span>
+                            <span id="sys-cpu" style="color: var(--primary);">0%</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" id="cpu-fill" style="width: 0%; box-shadow: 0 0 10px var(--primary);">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="health-row">
+                        <div class="health-label">
+                            <span>Memory Allocation</span>
+                            <span id="sys-mem" style="color: var(--secondary);">0%</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" id="mem-fill"
+                                style="width: 0%; background: var(--secondary); box-shadow: 0 0 10px var(--secondary);">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="display: flex; justify-content: space-between; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                        <div style="font-size: 0.8rem; color: var(--text-dim);">Database</div>
+                        <div style="font-size: 0.8rem; color: var(--success); font-weight: 600;">SUPABASE_CONNECTED
                         </div>
                     </div>
                 </div>
-                <div class="sys-stat">
-                    <span>Memory Usage</span>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span id="sys-mem">0%</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="mem-fill" style="width: 0%"></div>
+
+                <!-- Devices -->
+                <div class="glass-card stagger-3" style="flex: 1;">
+                    <div class="feed-header" style="padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <div class="feed-title">Active Nodes</div>
+                        <span id="mobile-count"
+                            style="font-size: 0.75rem; background: var(--surface-highlight); padding: 2px 8px; border-radius: 4px;">0</span>
+                    </div>
+                    <div id="mobile-list">
+                        <div style="text-align: center; padding: 2rem; color: var(--text-dim); font-size: 0.85rem;">
+                            Scanning for devices...
                         </div>
                     </div>
-                </div>
-                <div class="sys-stat">
-                    <span>Network</span>
-                    <span style="color: var(--success)">Stable</span>
-                </div>
-                <div class="sys-stat">
-                    <span>Supabase</span>
-                    <span style="color: var(--success)">Connected</span>
                 </div>
             </div>
         </div>
@@ -374,75 +562,94 @@
         const statusDot = document.getElementById('status-dot');
         const statusText = document.getElementById('status-text');
 
-        // Logout logic
+        // Logout
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await fetch('/auth/logout', { method: 'POST' });
             window.location.href = '/login.html';
         });
 
+        // Utils
+        const formatTime = (date) => {
+            return new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Dhaka',
+                month: 'short', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+            }).format(new Date(date));
+        };
+
         // Socket Events
         socket.on('connect', () => {
             statusDot.classList.add('online');
-            statusText.innerText = 'Server Online';
+            statusText.innerText = 'SYSTEM_ONLINE';
+            statusText.style.color = 'var(--success)';
             fetchStats();
         });
 
         socket.on('disconnect', () => {
             statusDot.classList.remove('online');
-            statusText.innerText = 'Server Offline';
+            statusText.innerText = 'CONNECTION_LOST';
+            statusText.style.color = 'var(--error)';
         });
 
         socket.on('mobile_list_update', (mobiles) => {
             const list = document.getElementById('mobile-list');
             const count = document.getElementById('mobile-count');
-
             count.innerText = mobiles.length;
 
             if (mobiles.length === 0) {
-                list.innerHTML = '<li style="color: var(--text-dim); font-size: 0.875rem; text-align: center; padding: 1rem;">No devices connected</li>';
+                list.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-dim); font-size: 0.85rem;">No active nodes detected</div>`;
                 return;
             }
 
             list.innerHTML = mobiles.map(m => `
-                <li style="display: flex; align-items: center; gap: 10px; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                    <div class="dot online" style="width: 6px; height: 6px;"></div>
-                    <div style="flex: 1;">
-                        <div style="font-size: 0.875rem; font-weight: 600;">${m.deviceName}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-dim);">${m.deviceId}</div>
+                <div class="device-item">
+                    <div class="device-info">
+                        <div style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.9rem;">${m.deviceName}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-dim); font-family: monospace;">${m.deviceId.substring(0, 12)}...</div>
+                        </div>
                     </div>
-                </li>
+                    <div style="font-size: 1.2rem;">📱</div>
+                </div>
             `).join('');
         });
 
         socket.on('activity_history', (logs) => {
             activityList.innerHTML = '';
             logs.slice().reverse().forEach(log => {
-                addActivity(log.title, log.subtitle, log.type, log.created_at);
+                addActivity(log.title, log.subtitle, log.type, log.created_at, false); // false = no animation for history
             });
         });
 
         socket.on('new_withdrawal', (data) => {
-            addActivity(`New withdrawal: ${data.username} (${data.uid})`, `৳${data.amount} via ${data.method} (${data.number})`, 'success');
+            addActivity(`New Request: ${data.username}`, `৳${data.amount} via ${data.method}`, 'warning');
             fetchStats();
         });
 
         socket.on('status_updated', (data) => {
-            addActivity(`Withdrawal ${data.status}`, `ID: ${data.id}`, data.status === 'completed' ? 'success' : 'error');
+            const type = data.status === 'completed' ? 'success' : 'error';
+            addActivity(`Status: ${data.status.toUpperCase()}`, `ID: ${data.id}`, type);
             fetchStats();
         });
 
-        function addActivity(title, subtitle, type, timestamp = new Date()) {
+        function addActivity(title, subtitle, type, timestamp = new Date(), animate = true) {
             const li = document.createElement('li');
-            li.className = 'activity-item';
+            li.className = 'feed-item';
+            if (!animate) li.style.opacity = '1';
+
+            const icon = type === 'success' ? '✓' : (type === 'error' ? '✕' : '!');
+            const color = type === 'success' ? 'var(--success)' : (type === 'error' ? 'var(--error)' : 'var(--warning)');
+
             li.innerHTML = `
-                <div class="item-info">
-                    <span class="item-user">${title}</span>
-                    <span class="item-details">${subtitle}</span>
+                <div class="feed-icon" style="color: ${color}; border: 1px solid ${color}44; background: ${color}11;">${icon}</div>
+                <div class="feed-content">
+                    <h4>${title}</h4>
+                    <p>${subtitle}</p>
                 </div>
-                <span class="item-amount" style="color: var(--${type === 'success' ? 'success' : (type === 'error' ? 'error' : 'warning')})">
-                    ${new Date(timestamp).toLocaleTimeString()}
-                </span>
+                <div class="feed-time">${formatTime(timestamp)}</div>
             `;
+
             activityList.prepend(li);
             if (activityList.children.length > 25) activityList.removeChild(activityList.lastChild);
         }
@@ -450,17 +657,12 @@
         async function fetchStats() {
             try {
                 const res = await fetch('/api/dashboard/stats');
-
-                if (res.status === 401 || res.status === 403) {
-                    window.location.href = '/login.html';
-                    return;
-                }
-
+                if (res.status === 401) { window.location.href = '/login.html'; return; }
                 const data = await res.json();
 
-                // Update UI
-                document.getElementById('stat-total').innerText = data.app.totalWithdrawals;
-                document.getElementById('stat-pending').innerText = data.app.pendingWithdrawals;
+                // Stats
+                updateVal('stat-total', data.app.totalWithdrawals);
+                updateVal('stat-pending', data.app.pendingWithdrawals);
 
                 const rate = data.app.totalWithdrawals > 0
                     ? ((data.app.successfulWithdrawals / data.app.totalWithdrawals) * 100).toFixed(1)
@@ -471,22 +673,39 @@
                 const hours = Math.floor(data.system.uptime / 3600);
                 const mins = Math.floor((data.system.uptime % 3600) / 60);
                 document.getElementById('stat-uptime').innerText = `${hours}h ${mins}m`;
-                document.getElementById('stat-platform').innerText = data.system.platform;
+                document.getElementById('stat-platform').innerText = `OS: ${data.system.platform}`;
 
-                // System Health
+                // Health
                 document.getElementById('sys-cpu').innerText = `${data.system.cpu}%`;
                 document.getElementById('cpu-fill').style.width = `${data.system.cpu}%`;
-
                 document.getElementById('sys-mem').innerText = `${data.system.memory}%`;
                 document.getElementById('mem-fill').style.width = `${data.system.memory}%`;
 
-            } catch (err) {
-                console.error('Error fetching stats:', err);
+            } catch (err) { console.error(err); }
+        }
+
+        function updateVal(id, newVal) {
+            const el = document.getElementById(id);
+            if (el.innerText != newVal) {
+                el.innerText = newVal;
+                el.style.animation = 'none';
+                el.offsetHeight; /* trigger reflow */
+                el.style.animation = 'slideDown 0.3s ease';
             }
         }
 
-        // Auto Refresh Stats every 5 seconds
         setInterval(fetchStats, 5000);
+
+        // Add Blink Animation
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes blink { 
+                0% { opacity: 1; } 
+                50% { opacity: 0.5; } 
+                100% { opacity: 1; } 
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 
