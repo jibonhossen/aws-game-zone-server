@@ -392,7 +392,7 @@ app.post('/api/withdrawals/verify', requireApiAuth, async (req, res) => {
             stats.pendingWithdrawals = Math.max(0, stats.pendingWithdrawals - 1);
         }
 
-        const log = saveActivityLog(`Withdrawal ${status}, UID: ${id}, ID: ${id}`, status === 'completed' ? 'success' : 'error');
+        const log = saveActivityLog(`Withdrawal ${status}, UUID: ${id}`, status === 'completed' ? 'success' : 'error');
         io.emit('status_updated', { id, status, log });
 
         // 2. Callback to Worker to update D1
