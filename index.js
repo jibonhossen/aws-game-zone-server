@@ -327,8 +327,8 @@ app.post('/api/withdrawals/new', async (req, res) => {
                     }
                     messages.push({
                         to: admin.token,
-                        sound: 'hello_tune.wav',
-                        channelId: 'withdrawal_alerts',
+                        sound: 'hello_tune',  // Android uses resource name without extension
+                        channelId: 'withdrawal_alerts_v3',  // Must match app's notification channel
                         title: 'New Withdrawal Request! 💰',
                         body: `${withdrawal.username} (UID: ${withdrawal.uid}) requested ৳${withdrawal.amount} via ${paymentMethod}`,
                         data: { type: 'withdrawal', id: withdrawal.id },
